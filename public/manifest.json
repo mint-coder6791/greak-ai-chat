@@ -1,0 +1,26 @@
+{
+  "name": "GREAK · 私人伴侣",
+  "short_name": "GREAK",
+  "description": "GREAK 私人伴侣",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ECFDF5",
+  "theme_color": "#6EE7B7",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/greak.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/greak.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

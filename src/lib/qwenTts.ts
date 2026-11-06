@@ -1,7 +1,7 @@
 import type { AppSettings } from '@/types';
 import { assertOk } from '@/lib/openai';
 
-const QWEN_TTS_URL = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
+const QWEN_TTS_URL = '/api/tts/api/v1/services/aigc/multimodal-generation/generation';
 const QWEN_TTS_MODEL = 'qwen-tts';
 
 export const QWEN_VOICES = [

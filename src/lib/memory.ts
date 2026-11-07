@@ -1,4 +1,4 @@
-import type { ApiMessage, ChatMessage, Conversation, ModelCall, AppSettings } from '@/types';
+import type { ApiContentPart, ApiMessage, ChatMessage, Conversation, ModelCall, AppSettings } from '@/types';
 import { STICKER_TAGS } from '@/lib/stickers';
 import { GREAK_PERSONA, REPLY_FORMAT_RULES } from '@/lib/persona';
 
@@ -6,7 +6,7 @@ const SUMMARY_PROMPT =
   '你是对话摘要助手。请把用户提供的已有摘要与新增对话融合为一段不超过300字的中文摘要，保留关键事实、用户偏好、人物信息和未完成的事项。只输出摘要本身。';
 
 const CAPABILITY_GUIDE =
-  '需要查询实时天气或最新资讯时，请调用可用工具获取结果，不要凭记忆编造。';
+  '需要查询实时天气或最新资讯时，请调用可用工具获取结果，不要凭记忆编造。用户发来图片时，请结合图片内容自然地回应。';
 
 const TAG_GUIDE = `表情标签只能从 ${STICKER_TAGS.join('、')} 中选择。`;
 
@@ -39,6 +39,14 @@ async function summarizeMessages(
   return content.trim();
 }
 
+function toApiContent(message: ChatMessage): ApiMessage['content'] {
+  if (!message.image) return message.content;
+  const parts: ApiContentPart[] = [];
+  if (message.content) parts.push({ type: 'text', text: message.content });
+  parts.push({ type: 'image_url', image_url: { url: message.image } });
+  return parts;
+}
+
 export async function buildChatContext(
   conversation: Conversation,
   settings: AppSettings,
@@ -58,7 +66,7 @@ export async function buildChatContext(
   const system = buildSystemPrompt(settings.summaryEnabled ? summary : '');
   const windowed: ApiMessage[] = conversation.messages
     .slice(windowStart)
-    .map((m) => ({ role: m.role, content: m.content }));
+    .map((m): ApiMessage => ({ role: m.role, content: toApiContent(m) }));
 
   return {
     apiMessages: [{ role: 'system', content: system }, ...windowed],

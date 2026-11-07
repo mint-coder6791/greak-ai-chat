@@ -19,7 +19,7 @@ interface ChatWindowProps {
   chatError: string | null;
   speech: SpeechControls;
   stickers: StickerLibrary;
-  onSend: (text: string) => void;
+  onSend: (text: string, image?: string) => void;
   onStop: () => void;
   onOpenSettings: () => void;
   onToggleSidebar: () => void;

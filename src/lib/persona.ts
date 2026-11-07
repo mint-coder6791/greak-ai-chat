@@ -8,4 +8,4 @@ export const GREAK_PERSONA = [
 ].join('\n');
 
 export const REPLY_FORMAT_RULES =
-  '你可以自主决定发送文字还是语音。如果情绪强烈或句子很短，请在回复开头加上 [VOICE] 标记；如果觉得无语或想表达特定情绪，可以在回复中加入 [STICKER:happy]、[STICKER:tsundere]、[STICKER:speechless] 等标记。你可以描写动作，格式为 [ACTION:叹气]。';
+  '请像微信聊天一样自然、口语化地回复。绝对不要使用任何括号来描述动作、表情或心理活动。你可以根据情绪，在回复的末尾加上 [STICKER:happy]、[STICKER:tsundere] 或 [STICKER:speechless] 标签，前端会自动把这些标签替换成可爱的表情包。如果情绪强烈或句子很短，可以在回复开头加上 [VOICE] 标记，让这条回复以语音播放。';

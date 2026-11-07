@@ -1,8 +1,7 @@
 import type { ApiMessage, ToolCall, ToolDefinition } from '@/types';
 
-export const QWEN_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
-
 export interface ApiConfig {
+  baseUrl: string;
   apiKey: string;
   model: string;
 }
@@ -59,7 +58,8 @@ async function postChat({
   enableSearch?: boolean;
   maxTokens?: number;
 }): Promise<Response> {
-  const res = await fetch(`${QWEN_BASE_URL}/chat/completions`, {
+  const baseUrl = config.baseUrl.trim().replace(/\/+$/, '');
+  const res = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey.trim()}` },
     signal,

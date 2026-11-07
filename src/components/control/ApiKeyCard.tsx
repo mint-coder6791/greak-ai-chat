@@ -8,6 +8,7 @@ import { Field, buttonClass, inputClass } from '@/components/control/ui';
 interface ApiKeyCardProps {
   label: string;
   apiKey: string;
+  baseUrl: string;
   model: string;
   quota: number;
   used: number;
@@ -33,6 +34,7 @@ function formatTokens(value: number): string {
 export function ApiKeyCard({
   label,
   apiKey,
+  baseUrl,
   model,
   quota,
   used,
@@ -49,13 +51,17 @@ export function ApiKeyCard({
 
   const runTest = async () => {
     const key = apiKey.trim();
-    if (!key || !model.trim()) {
-      setTest({ status: 'error', message: '请先填写 API Key 和模型 ID' });
+    if (!key || !model.trim() || !baseUrl.trim()) {
+      setTest({ status: 'error', message: '请先填写 API Base URL、API Key 和模型名称' });
       return;
     }
     setTest({ status: 'testing' });
     try {
-      await requestCompletion({ config: { apiKey: key, model: model.trim() }, messages: [{ role: 'user', content: 'ping' }], maxTokens: 8 });
+      await requestCompletion({
+        config: { baseUrl, apiKey: key, model: model.trim() },
+        messages: [{ role: 'user', content: 'ping' }],
+        maxTokens: 8,
+      });
       setTest({ status: 'ok' });
     } catch (err) {
       setTest({ status: 'error', message: errorMessage(err) });

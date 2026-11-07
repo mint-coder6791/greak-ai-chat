@@ -1,13 +1,15 @@
 import type { AppSettings } from '@/types';
 
 export const DEFAULT_TITLE = '平行时空';
+export const DEFAULT_API_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 
 export const DEFAULT_SETTINGS: AppSettings = {
+  apiBaseUrl: DEFAULT_API_BASE_URL,
   apiKey: '',
   backupApiKey: '',
   primaryQuota: 0,
   backupQuota: 0,
-  model: 'qwen-plus',
+  model: 'qwen-max',
   maxContextRounds: 10,
   summaryEnabled: false,
   ttsEngine: 'qwen',

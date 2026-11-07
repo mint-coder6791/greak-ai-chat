@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
-import { Send, Square } from 'lucide-react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
+import { ImagePlus, Send, Square, X } from 'lucide-react';
+import { errorMessage } from '@/lib/errors';
+import { compressImageToDataUrl } from '@/lib/imageFile';
 
 interface ComposerProps {
   busy: boolean;
   configured: boolean;
-  onSend: (text: string) => void;
+  onSend: (text: string, image?: string) => void;
   onStop: () => void;
   onOpenSettings: () => void;
 }
@@ -14,7 +16,10 @@ const MAX_HEIGHT_PX = 200;
 
 export function Composer({ busy, configured, onSend, onStop, onOpenSettings }: ComposerProps) {
   const [draft, setDraft] = useState('');
+  const [image, setImage] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -23,12 +28,26 @@ export function Composer({ busy, configured, onSend, onStop, onOpenSettings }: C
     el.style.height = `${Math.min(el.scrollHeight, MAX_HEIGHT_PX)}px`;
   }, [draft]);
 
-  const canSend = configured && !busy && draft.trim().length > 0;
+  const canSend = configured && !busy && (draft.trim().length > 0 || image !== null);
 
   const submit = () => {
     if (!canSend) return;
-    onSend(draft);
+    onSend(draft.trim(), image ?? undefined);
     setDraft('');
+    setImage(null);
+    setImageError(null);
+  };
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImageError(null);
+    try {
+      setImage(await compressImageToDataUrl(file));
+    } catch (err) {
+      setImageError(errorMessage(err));
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -49,7 +68,42 @@ export function Composer({ busy, configured, onSend, onStop, onOpenSettings }: C
           尚未配置接口信息，点击这里打开总控设置进行填写
         </button>
       )}
+      {(image || imageError) && (
+        <div className="flex items-center gap-3 px-1">
+          {image && (
+            <div className="relative shrink-0">
+              <img src={image} alt="待发送的图片" className="h-16 w-16 rounded-2xl border border-emerald-100 object-cover" />
+              <button
+                type="button"
+                onClick={() => setImage(null)}
+                aria-label="移除图片"
+                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-slate-700 text-white shadow transition hover:bg-slate-900"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+          {imageError && <p role="alert" className="text-xs text-rose-700">{imageError}</p>}
+        </div>
+      )}
       <div className="flex items-end gap-2 rounded-3xl border border-emerald-100 bg-white p-2 shadow-[0_4px_20px_rgba(16,185,129,0.08)] transition focus-within:border-emerald-300 focus-within:ring-4 focus-within:ring-emerald-100">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={busy}
+          aria-label="上传图片"
+          title="上传图片"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-3xl text-slate-500 transition hover:bg-emerald-50 hover:text-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:text-slate-300"
+        >
+          <ImagePlus className="h-5 w-5" />
+        </button>
         <textarea
           ref={textareaRef}
           value={draft}

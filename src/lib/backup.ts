@@ -21,6 +21,7 @@ function toMessage(value: unknown): ChatMessage | null {
     id: value.id,
     role: value.role,
     content: value.content,
+    ...(typeof value.image === 'string' ? { image: value.image } : {}),
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }

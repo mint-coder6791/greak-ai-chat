@@ -82,6 +82,13 @@ export function MessageBubble({
               : 'rounded-3xl rounded-tl-none bg-white text-slate-800 shadow-[0_2px_12px_rgba(15,23,42,0.08)]'
           }`}
         >
+          {isUser && message.image && (
+            <img
+              src={message.image}
+              alt="已发送的图片"
+              className="mb-2 max-h-60 w-auto max-w-full rounded-2xl object-cover"
+            />
+          )}
           {showDots ? <ThinkingDots /> : renderContent(visibleText, isUser, stickers)}
           {isStreaming && message.content !== '' && (
             <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 bg-emerald-400 animate-pulse" />

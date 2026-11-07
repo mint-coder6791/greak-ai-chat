@@ -6,7 +6,11 @@ export function getSlotKey(settings: AppSettings, slot: KeySlot): string {
 }
 
 export function isConfigured(settings: AppSettings): boolean {
-  return settings.model.trim() !== '' && (getSlotKey(settings, 'primary') !== '' || getSlotKey(settings, 'backup') !== '');
+  return (
+    settings.apiBaseUrl.trim() !== '' &&
+    settings.model.trim() !== '' &&
+    (getSlotKey(settings, 'primary') !== '' || getSlotKey(settings, 'backup') !== '')
+  );
 }
 
 function slotOrder(preferred: KeySlot): KeySlot[] {

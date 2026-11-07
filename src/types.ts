@@ -4,6 +4,7 @@ export interface ChatMessage {
   id: string;
   role: MessageRole;
   content: string;
+  image?: string;
   createdAt: number;
 }
 
@@ -35,9 +36,13 @@ export interface ToolCall {
   function: { name: string; arguments: string };
 }
 
+export type ApiContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } };
+
 export interface ApiMessage {
   role: 'system' | MessageRole | 'tool';
-  content: string | null;
+  content: string | ApiContentPart[] | null;
   tool_calls?: ToolCall[];
   tool_call_id?: string;
 }
@@ -58,6 +63,7 @@ export type ModelCall = (options: ModelCallOptions) => Promise<string>;
 export type TtsEngine = 'browser' | 'qwen';
 
 export interface AppSettings {
+  apiBaseUrl: string;
   apiKey: string;
   backupApiKey: string;
   primaryQuota: number;

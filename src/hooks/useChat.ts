@@ -40,9 +40,9 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
 
   const stop = () => abortRef.current?.abort();
 
-  const send = async (rawText: string) => {
+  const send = async (rawText: string, image?: string) => {
     const text = rawText.trim();
-    if (!text || streaming) return;
+    if ((!text && !image) || streaming) return;
 
     setError(null);
     setNotice(null);
@@ -50,7 +50,7 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
 
     const conversation = chat.activeConversation ?? chat.createNew();
     const conversationId = conversation.id;
-    const userMessage: ChatMessage = createMessage('user', text);
+    const userMessage: ChatMessage = { ...createMessage('user', text), ...(image ? { image } : {}) };
     const assistantMessage: ChatMessage = createMessage('assistant', '');
     const controller = new AbortController();
     abortRef.current = controller;
@@ -75,7 +75,7 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
         keyPool.setActiveSlot(slot);
         setNotice(slot === 'backup' ? 'GREAK 换了个通道，对话不受影响' : 'GREAK 已切回主通道');
       }
-      const inputText = messages.map((m) => m.content ?? '').join('\n');
+      const inputText = messages.map((m) => (typeof m.content === 'string' ? m.content : '')).join('\n');
       keyPool.recordUsage(slot, estimateTokens(inputText) + estimateTokens(outputOf(value)));
       return value;
     };
@@ -83,7 +83,13 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
     const complete: ModelCall = ({ messages, signal, enableSearch }) =>
       runWithKeys(
         messages,
-        (apiKey) => requestCompletion({ config: { apiKey, model: settings.model }, messages, signal, enableSearch }),
+        (apiKey) =>
+          requestCompletion({
+            config: { baseUrl: settings.apiBaseUrl, apiKey, model: settings.model },
+            messages,
+            signal,
+            enableSearch,
+          }),
         (text) => text,
       );
 
@@ -95,7 +101,7 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
           transcript,
           (apiKey) =>
             streamChatCompletion({
-              config: { apiKey, model: settings.model },
+              config: { baseUrl: settings.apiBaseUrl, apiKey, model: settings.model },
               messages: transcript,
               tools: allowTools ? AGENT_TOOLS : undefined,
               signal,

@@ -18,6 +18,7 @@ export function VisionSection({ settings, onChange }: VisionSectionProps) {
         onBaseUrlChange={(visionApiUrl) => onChange({ visionApiUrl })}
         onApiKeyChange={(visionApiKey) => onChange({ visionApiKey })}
         onModelChange={(visionModel) => onChange({ visionModel })}
+        baseUrlHint="接口根地址，程序会自动拼接 /chat/completions"
         modelPlaceholder="qwen-vl-max"
         modelHint="必须是支持图片输入的视觉模型，例如 qwen-vl-max"
       />

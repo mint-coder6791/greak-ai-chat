@@ -1,5 +1,4 @@
 import { assertOk } from '@/lib/openai';
-import { compressImageToDataUrl } from '@/lib/imageFile';
 
 export interface ImageConfig {
   baseUrl: string;
@@ -7,8 +6,8 @@ export interface ImageConfig {
   model: string;
 }
 
-interface ImageResponse {
-  data?: { url?: string; b64_json?: string }[];
+interface MultimodalImageResponse {
+  output?: { choices?: { message?: { content?: { image?: string }[] } }[] };
 }
 
 export async function generateImage({
@@ -20,14 +19,17 @@ export async function generateImage({
   prompt: string;
   signal: AbortSignal;
 }): Promise<string> {
-  const baseUrl = config.baseUrl.trim().replace(/\/+$/, '');
   let res: Response;
   try {
-    res = await fetch(`${baseUrl}/images/generations`, {
+    res = await fetch(config.baseUrl.trim(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey.trim()}` },
       signal,
-      body: JSON.stringify({ model: config.model.trim(), prompt, n: 1, size: '1024x1024' }),
+      body: JSON.stringify({
+        model: config.model.trim(),
+        input: { messages: [{ role: 'user', content: [{ text: prompt }] }] },
+        parameters: { size: '1024*1024', n: 1, watermark: false },
+      }),
     });
   } catch (err) {
     if (signal.aborted) throw err;
@@ -35,12 +37,8 @@ export async function generateImage({
   }
   await assertOk(res);
 
-  const data = (await res.json()) as ImageResponse;
-  const item = data.data?.[0];
-  if (item?.url) return item.url;
-  if (item?.b64_json) {
-    const blob = await (await fetch(`data:image/png;base64,${item.b64_json}`)).blob();
-    return compressImageToDataUrl(new File([blob], 'generated.png', { type: 'image/png' }));
-  }
-  throw new Error('生图接口返回的数据格式不正确');
+  const data = (await res.json()) as MultimodalImageResponse;
+  const image = data.output?.choices?.[0]?.message?.content?.find((part) => part.image)?.image;
+  if (!image) throw new Error('生图接口返回的数据格式不正确');
+  return image;
 }

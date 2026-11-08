@@ -2,6 +2,8 @@ import type { AppSettings } from '@/types';
 
 export const DEFAULT_TITLE = '平行时空';
 export const DEFAULT_API_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+export const DEFAULT_IMAGE_API_URL =
+  'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
 
 export const DEFAULT_SETTINGS: AppSettings = {
   apiBaseUrl: DEFAULT_API_BASE_URL,
@@ -27,9 +29,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   logPayload: false,
   maxStoredMessages: 200,
   autoDrawEnabled: false,
-  imageApiUrl: '',
+  imageApiUrl: DEFAULT_IMAGE_API_URL,
   imageApiKey: '',
-  imageModel: '',
+  imageModel: 'wan2.6-t2i',
   visionApiUrl: DEFAULT_API_BASE_URL,
   visionApiKey: '',
   visionModel: 'qwen-vl-max',

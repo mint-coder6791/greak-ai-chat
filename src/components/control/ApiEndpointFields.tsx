@@ -7,6 +7,7 @@ interface ApiEndpointFieldsProps {
   onBaseUrlChange: (value: string) => void;
   onApiKeyChange: (value: string) => void;
   onModelChange: (value: string) => void;
+  baseUrlHint: string;
   modelPlaceholder: string;
   modelHint: string;
 }
@@ -18,17 +19,17 @@ export function ApiEndpointFields({
   onBaseUrlChange,
   onApiKeyChange,
   onModelChange,
+  baseUrlHint,
   modelPlaceholder,
   modelHint,
 }: ApiEndpointFieldsProps) {
   return (
     <>
-      <Field label="API Base URL" hint="接口根地址，请填写服务商提供的 Base URL">
+      <Field label="API Base URL" hint={baseUrlHint}>
         <input
           className={inputClass}
           value={baseUrl}
           onChange={(e) => onBaseUrlChange(e.target.value)}
-          placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1"
           spellCheck={false}
           autoComplete="off"
         />

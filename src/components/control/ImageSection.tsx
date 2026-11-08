@@ -24,7 +24,8 @@ export function ImageSection({ settings, onChange }: ImageSectionProps) {
         onBaseUrlChange={(imageApiUrl) => onChange({ imageApiUrl })}
         onApiKeyChange={(imageApiKey) => onChange({ imageApiKey })}
         onModelChange={(imageModel) => onChange({ imageModel })}
-        modelPlaceholder="例如 wanx2.1-t2i-turbo"
+        baseUrlHint="完整的生图接口地址，程序会直接请求该地址，不会再拼接路径"
+        modelPlaceholder="wan2.6-t2i"
         modelHint="填写服务商提供的生图模型名称"
       />
       <p className="text-[11px] leading-relaxed text-slate-500">

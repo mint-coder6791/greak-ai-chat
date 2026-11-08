@@ -19,7 +19,7 @@ export function SpeechSection({ settings, speech, onChange }: SpeechSectionProps
 
   return (
     <Section
-      index={3}
+      index={4}
       icon={Volume2}
       title="语音朗读"
       description="浏览器音色或千问 TTS，支持自动朗读与分段"

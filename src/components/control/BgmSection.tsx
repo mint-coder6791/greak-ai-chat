@@ -15,7 +15,7 @@ export function BgmSection({ settings, bgm, onChange }: BgmSectionProps) {
   const urlChanged = urlDraft.trim() !== settings.bgmUrl;
 
   return (
-    <Section index={4} icon={Music} title="背景音乐" description="音频直链或本地文件，智能避让朗读">
+    <Section index={5} icon={Music} title="背景音乐" description="音频直链或本地文件，智能避让朗读">
       <Field label="音频直链 URL" hint="需要是可直接播放的音频地址（mp3、ogg 等）">
         <div className="flex gap-2">
           <input

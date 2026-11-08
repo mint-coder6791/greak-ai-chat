@@ -9,6 +9,7 @@ import type { StickerLibrary } from '@/lib/stickers';
 import { Composer } from '@/components/chat/Composer';
 import { GreakPortrait } from '@/components/chat/GreakPortrait';
 import { MessageBubble, type MessageSpeechState } from '@/components/chat/MessageBubble';
+import { DrawingBubble } from '@/components/chat/DrawingBubble';
 import { StatusIndicator } from '@/components/chat/StatusIndicator';
 
 interface ChatWindowProps {
@@ -114,6 +115,7 @@ export function ChatWindow({
               />
             </div>
           ))}
+          {activeStreaming?.drawing && <DrawingBubble avatarSrc={avatarSrc} />}
         </div>
       </div>
 

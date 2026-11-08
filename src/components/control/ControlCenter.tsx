@@ -8,6 +8,7 @@ import type { StickerControls } from '@/hooks/useStickerLibrary';
 import type { PortraitControls } from '@/hooks/usePortrait';
 import type { ImportedBackup } from '@/lib/backup';
 import { ModelSection } from '@/components/control/ModelSection';
+import { ImageSection } from '@/components/control/ImageSection';
 import { PersonaMemorySection } from '@/components/control/PersonaMemorySection';
 import { SpeechSection } from '@/components/control/SpeechSection';
 import { BgmSection } from '@/components/control/BgmSection';
@@ -103,6 +104,7 @@ export function ControlCenter({
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
           <ModelSection settings={settings} keyPool={keyPool} onChange={updateSettings} />
+          <ImageSection settings={settings} onChange={updateSettings} />
           <PersonaMemorySection
             settings={settings}
             chat={chat}

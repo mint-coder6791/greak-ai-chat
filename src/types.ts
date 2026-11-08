@@ -85,4 +85,8 @@ export interface AppSettings {
   smartDucking: boolean;
   logPayload: boolean;
   maxStoredMessages: number;
+  autoDrawEnabled: boolean;
+  imageApiUrl: string;
+  imageApiKey: string;
+  imageModel: string;
 }

@@ -9,7 +9,7 @@ interface DebugSectionProps {
 
 export function DebugSection({ settings, onChange }: DebugSectionProps) {
   return (
-    <Section index={7} icon={Bug} title="开发者调试" description="请求查看与本地存储容量保护">
+    <Section index={8} icon={Bug} title="开发者调试" description="请求查看与本地存储容量保护">
       <Toggle
         checked={settings.logPayload}
         onChange={(checked) => onChange({ logPayload: checked })}

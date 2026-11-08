@@ -1,6 +1,6 @@
 import type { ApiContentPart, ApiMessage, ChatMessage, Conversation, ModelCall, AppSettings } from '@/types';
 import { STICKER_TAGS } from '@/lib/stickers';
-import { GREAK_PERSONA, REPLY_FORMAT_RULES } from '@/lib/persona';
+import { GREAK_PERSONA, REPLY_FORMAT_RULES, DRAW_RULES } from '@/lib/persona';
 
 const SUMMARY_PROMPT =
   '你是对话摘要助手。请把用户提供的已有摘要与新增对话融合为一段不超过300字的中文摘要，保留关键事实、用户偏好、人物信息和未完成的事项。只输出摘要本身。';
@@ -16,8 +16,9 @@ export interface ChatContext {
   summarizedCount: number;
 }
 
-export function buildSystemPrompt(summary: string): string {
+export function buildSystemPrompt(summary: string, autoDraw: boolean): string {
   const parts = [GREAK_PERSONA, REPLY_FORMAT_RULES, TAG_GUIDE, CAPABILITY_GUIDE];
+  if (autoDraw) parts.push(DRAW_RULES);
   if (summary) parts.push(`【历史摘要】以下是更早对话的摘要，请据此保持记忆连贯：\n${summary}`);
   return parts.join('\n');
 }
@@ -40,7 +41,7 @@ async function summarizeMessages(
 }
 
 function toApiContent(message: ChatMessage): ApiMessage['content'] {
-  if (!message.image) return message.content;
+  if (!message.image || message.role !== 'user') return message.content;
   const parts: ApiContentPart[] = [];
   if (message.content) parts.push({ type: 'text', text: message.content });
   parts.push({ type: 'image_url', image_url: { url: message.image } });
@@ -63,9 +64,10 @@ export async function buildChatContext(
     summarizedCount = windowStart;
   }
 
-  const system = buildSystemPrompt(settings.summaryEnabled ? summary : '');
+  const system = buildSystemPrompt(settings.summaryEnabled ? summary : '', settings.autoDrawEnabled);
   const windowed: ApiMessage[] = conversation.messages
     .slice(windowStart)
+    .filter((m) => m.role === 'user' || m.content !== '')
     .map((m): ApiMessage => ({ role: m.role, content: toApiContent(m) }));
 
   return {

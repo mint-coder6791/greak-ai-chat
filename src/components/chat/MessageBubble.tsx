@@ -4,6 +4,7 @@ import type { SpeechStatus } from '@/hooks/useSpeech';
 import { useTypewriter } from '@/hooks/useTypewriter';
 import { type StickerLibrary } from '@/lib/stickers';
 import { parseReplySegments, stripVoiceMarker } from '@/lib/replyParser';
+import { stripDrawMarkers } from '@/lib/drawMarker';
 import { StickerImage } from '@/components/chat/StickerImage';
 import { AvatarSlot } from '@/components/layout/AvatarSlot';
 
@@ -62,9 +63,13 @@ export function MessageBubble({
   onStopSpeech,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
-  const displayContent = isUser ? message.content : stripVoiceMarker(message.content);
+  const displayContent = isUser ? message.content : stripDrawMarkers(stripVoiceMarker(message.content));
   const visibleText = useTypewriter(displayContent, isStreaming);
   const showDots = !isUser && isStreaming && message.content === '';
+  const hasText = showDots || displayContent !== '';
+  const imageEl = message.image ? (
+    <img src={message.image} alt={isUser ? '已发送的图片' : 'GREAK 画的图'} className="max-h-72 w-auto max-w-full rounded-2xl object-cover" />
+  ) : null;
   const showSpeechControls = !isUser && !isStreaming && message.content.trim() !== '';
   const speechActive = speechState !== 'idle';
 
@@ -75,6 +80,8 @@ export function MessageBubble({
     <div className={`flex animate-fade-in-up gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
       {!isUser && <AvatarSlot src={avatarSrc} className="mt-1 h-9 w-9" />}
       <div className={`flex min-w-0 max-w-[75%] flex-col gap-1.5 ${isUser ? 'items-end' : 'items-start'}`}>
+        {!hasText && imageEl}
+        {(hasText || !imageEl) && (
         <div
           className={`whitespace-pre-wrap break-words px-4 py-3 text-[15px] leading-[1.7] ${
             isUser
@@ -82,18 +89,13 @@ export function MessageBubble({
               : 'rounded-3xl rounded-tl-none bg-white text-slate-800 shadow-[0_2px_12px_rgba(15,23,42,0.08)]'
           }`}
         >
-          {isUser && message.image && (
-            <img
-              src={message.image}
-              alt="已发送的图片"
-              className="mb-2 max-h-60 w-auto max-w-full rounded-2xl object-cover"
-            />
-          )}
+          {hasText && imageEl && <span className="mb-2 block">{imageEl}</span>}
           {showDots ? <ThinkingDots /> : renderContent(visibleText, isUser, stickers)}
           {isStreaming && message.content !== '' && (
             <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 bg-emerald-400 animate-pulse" />
           )}
         </div>
+        )}
         {showSpeechControls && (
           <div
             className={`flex items-center gap-1 transition md:opacity-0 md:group-hover:opacity-100 ${

@@ -10,10 +10,13 @@ import { requestCompletion, streamChatCompletion, type StreamResult } from '@/li
 import { estimateTokens, withKeyFailover } from '@/lib/keyPool';
 import { AGENT_TOOLS, executeTool } from '@/lib/tools';
 import { errorMessage } from '@/lib/errors';
+import { extractDrawPrompts, stripDrawMarkers } from '@/lib/drawMarker';
+import { generateImage } from '@/lib/imageGeneration';
 
 export interface StreamingState {
   conversationId: string;
   messageId: string | null;
+  drawing?: boolean;
 }
 
 const MAX_TOOL_STEPS = 4;
@@ -120,6 +123,24 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
       }
     };
 
+    const draw = async (conversationId: string, prompt: string, signal: AbortSignal) => {
+      const { imageApiUrl, imageApiKey, imageModel } = settings;
+      if (!imageApiUrl.trim() || !imageApiKey.trim() || !imageModel.trim()) {
+        throw new Error('自主生图已开启，但生图接口的 URL、Key 或模型名称还没填写完整');
+      }
+      setStreaming({ conversationId, messageId: null, drawing: true });
+      const src = await generateImage({
+        config: { baseUrl: imageApiUrl, apiKey: imageApiKey, model: imageModel },
+        prompt,
+        signal,
+      });
+      chat.updateConversation(conversationId, (c) => ({
+        ...c,
+        messages: [...c.messages, { ...createMessage('assistant', ''), image: src }],
+        updatedAt: Date.now(),
+      }));
+    };
+
     try {
       const withUser = { ...conversation, messages: [...conversation.messages, userMessage] };
       const context = await buildChatContext(withUser, settings, controller.signal, complete);
@@ -135,9 +156,16 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
       if (settings.logPayload) console.log('[AI payload]', context.apiMessages);
 
       const reply = await runAgent(context.apiMessages, controller.signal);
-      const voiceText = extractVoiceText(reply);
+      const spoken = stripDrawMarkers(reply);
+      const drawPrompt = settings.autoDrawEnabled ? extractDrawPrompts(reply)[0] : undefined;
+      chat.updateConversation(conversationId, (c) => ({
+        ...c,
+        messages: c.messages.map((m) => (m.id === assistantMessage.id ? { ...m, content: spoken } : m)),
+      }));
+      const voiceText = extractVoiceText(spoken);
       if (voiceText) speech.speak(voiceText, assistantMessage.id);
-      else if (settings.autoRead && reply.trim()) speech.speak(reply, assistantMessage.id);
+      else if (settings.autoRead && spoken.trim()) speech.speak(spoken, assistantMessage.id);
+      if (drawPrompt) await draw(conversationId, drawPrompt, controller.signal);
     } catch (err) {
       if (!controller.signal.aborted) setError(errorMessage(err));
     } finally {

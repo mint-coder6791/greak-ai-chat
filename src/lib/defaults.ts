@@ -26,4 +26,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   smartDucking: true,
   logPayload: false,
   maxStoredMessages: 200,
+  autoDrawEnabled: false,
+  imageApiUrl: '',
+  imageApiKey: '',
+  imageModel: '',
 };

@@ -67,7 +67,7 @@ export function AppearanceSection({ portrait }: AppearanceSectionProps) {
   const hasCustomPortrait = portrait.portraitUrl !== null;
 
   return (
-    <Section index={7} icon={ImagePlus} title="外观设置" description="上传自己的形象，用作侧边栏与聊天头像">
+    <Section index={8} icon={ImagePlus} title="外观设置" description="上传自己的形象，用作侧边栏与聊天头像">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <label
           className={`${buttonClass} cursor-pointer ${busy ? 'pointer-events-none opacity-50' : ''}`}

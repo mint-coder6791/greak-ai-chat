@@ -50,7 +50,7 @@ export function StickerSection({ stickers }: StickerSectionProps) {
 
   return (
     <Section
-      index={6}
+      index={7}
       icon={ImageIcon}
       title="表情包库"
       description="上传专属表情，AI 发送 [STICKER:标签] 时会显示"

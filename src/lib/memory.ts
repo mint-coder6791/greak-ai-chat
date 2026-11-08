@@ -8,6 +8,8 @@ const SUMMARY_PROMPT =
 const CAPABILITY_GUIDE =
   '需要查询实时天气或最新资讯时，请调用可用工具获取结果，不要凭记忆编造。用户发来图片时，请结合图片内容自然地回应。';
 
+const IMAGE_PLACEHOLDER = '（用户发送了一张图片）';
+
 const TAG_GUIDE = `表情标签只能从 ${STICKER_TAGS.join('、')} 中选择。`;
 
 export interface ChatContext {
@@ -40,8 +42,9 @@ async function summarizeMessages(
   return content.trim();
 }
 
-function toApiContent(message: ChatMessage): ApiMessage['content'] {
+function toApiContent(message: ChatMessage, vision: boolean): ApiMessage['content'] {
   if (!message.image || message.role !== 'user') return message.content;
+  if (!vision) return message.content || IMAGE_PLACEHOLDER;
   const parts: ApiContentPart[] = [];
   if (message.content) parts.push({ type: 'text', text: message.content });
   parts.push({ type: 'image_url', image_url: { url: message.image } });
@@ -53,6 +56,7 @@ export async function buildChatContext(
   settings: AppSettings,
   signal: AbortSignal,
   complete: ModelCall,
+  vision: boolean,
 ): Promise<ChatContext> {
   const windowStart = Math.max(0, conversation.messages.length - settings.maxContextRounds * 2);
   let summary = conversation.summary;
@@ -68,7 +72,7 @@ export async function buildChatContext(
   const windowed: ApiMessage[] = conversation.messages
     .slice(windowStart)
     .filter((m) => m.role === 'user' || m.content !== '')
-    .map((m): ApiMessage => ({ role: m.role, content: toApiContent(m) }));
+    .map((m): ApiMessage => ({ role: m.role, content: toApiContent(m, vision) }));
 
   return {
     apiMessages: [{ role: 'system', content: system }, ...windowed],

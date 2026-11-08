@@ -12,7 +12,7 @@ interface ModelSectionProps {
 
 export function ModelSection({ settings, keyPool, onChange }: ModelSectionProps) {
   return (
-    <Section index={1} icon={Plug} title="接口与模型" description="任意兼容 OpenAI 格式的大模型，主备双 Key 自动容灾" defaultOpen>
+    <Section index={1} icon={Plug} title="文字对话模型" description="日常聊天使用，兼容 OpenAI 格式，主备双 Key 自动容灾" defaultOpen>
       <Field label="API Base URL" hint="接口根地址，程序会自动拼接 /chat/completions。默认是通义千问，可换成豆包、Gemini 等地址">
         <input
           className={inputClass}
@@ -24,7 +24,7 @@ export function ModelSection({ settings, keyPool, onChange }: ModelSectionProps)
         />
       </Field>
 
-      <Field label="模型名称 (Model Name)" hint="默认 qwen-max。需要识图时请换成视觉模型，例如 qwen-vl-max">
+      <Field label="模型名称 (Model Name)" hint="日常聊天使用的模型，默认 qwen-max">
         <input
           className={inputClass}
           value={settings.model}

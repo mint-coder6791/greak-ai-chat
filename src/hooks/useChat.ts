@@ -6,7 +6,7 @@ import type { KeyPoolControls } from '@/hooks/useKeyPool';
 import { appendToMessage, createMessage } from '@/lib/conversations';
 import { buildChatContext } from '@/lib/memory';
 import { extractVoiceText } from '@/lib/replyParser';
-import { requestCompletion, streamChatCompletion, type StreamResult } from '@/lib/openai';
+import { requestCompletion, streamChatCompletion, type ApiConfig, type StreamResult } from '@/lib/openai';
 import { estimateTokens, withKeyFailover } from '@/lib/keyPool';
 import { AGENT_TOOLS, executeTool } from '@/lib/tools';
 import { errorMessage } from '@/lib/errors';
@@ -55,6 +55,7 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
     const conversationId = conversation.id;
     const userMessage: ChatMessage = { ...createMessage('user', text), ...(image ? { image } : {}) };
     const assistantMessage: ChatMessage = createMessage('assistant', '');
+    const hasImage = Boolean(image);
     const controller = new AbortController();
     abortRef.current = controller;
     setStreaming({ conversationId, messageId: null });
@@ -96,7 +97,10 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
         (text) => text,
       );
 
-    const runAgent = async (messages: ApiMessage[], signal: AbortSignal): Promise<string> => {
+    const appendDelta = (delta: string) =>
+      chat.updateConversation(conversationId, (c) => appendToMessage(c, assistantMessage.id, delta));
+
+    const runTextAgent = async (messages: ApiMessage[], signal: AbortSignal): Promise<string> => {
       const transcript = [...messages];
       for (let step = 0; ; step += 1) {
         const allowTools = step < MAX_TOOL_STEPS;
@@ -108,8 +112,7 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
               messages: transcript,
               tools: allowTools ? AGENT_TOOLS : undefined,
               signal,
-              onDelta: (delta) =>
-                chat.updateConversation(conversationId, (c) => appendToMessage(c, assistantMessage.id, delta)),
+              onDelta: appendDelta,
             }),
           (r) => r.content,
         );
@@ -123,18 +126,28 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
       }
     };
 
-    const draw = async (conversationId: string, prompt: string, signal: AbortSignal) => {
+    const runVisionReply = async (messages: ApiMessage[], signal: AbortSignal): Promise<string> => {
+      const { visionApiUrl, visionApiKey, visionModel } = settings;
+      if (!visionApiUrl.trim() || !visionApiKey.trim() || !visionModel.trim()) {
+        throw new Error('请先在总控设置中填写视觉识别模型的 API Base URL、API Key 和模型名称');
+      }
+      const config: ApiConfig = { baseUrl: visionApiUrl, apiKey: visionApiKey, model: visionModel };
+      const result = await streamChatCompletion({ config, messages, signal, onDelta: appendDelta });
+      return result.content;
+    };
+
+    const draw = async (drawConversationId: string, prompt: string, signal: AbortSignal) => {
       const { imageApiUrl, imageApiKey, imageModel } = settings;
       if (!imageApiUrl.trim() || !imageApiKey.trim() || !imageModel.trim()) {
-        throw new Error('自主生图已开启，但生图接口的 URL、Key 或模型名称还没填写完整');
+        throw new Error('自主生图已开启，但图像生成模型的 URL、Key 或模型名称还没填写完整');
       }
-      setStreaming({ conversationId, messageId: null, drawing: true });
+      setStreaming({ conversationId: drawConversationId, messageId: null, drawing: true });
       const src = await generateImage({
         config: { baseUrl: imageApiUrl, apiKey: imageApiKey, model: imageModel },
         prompt,
         signal,
       });
-      chat.updateConversation(conversationId, (c) => ({
+      chat.updateConversation(drawConversationId, (c) => ({
         ...c,
         messages: [...c.messages, { ...createMessage('assistant', ''), image: src }],
         updatedAt: Date.now(),
@@ -143,7 +156,7 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
 
     try {
       const withUser = { ...conversation, messages: [...conversation.messages, userMessage] };
-      const context = await buildChatContext(withUser, settings, controller.signal, complete);
+      const context = await buildChatContext(withUser, settings, controller.signal, complete, hasImage);
 
       chat.updateConversation(conversationId, (c) => ({
         ...c,
@@ -155,7 +168,9 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
 
       if (settings.logPayload) console.log('[AI payload]', context.apiMessages);
 
-      const reply = await runAgent(context.apiMessages, controller.signal);
+      const reply = hasImage
+        ? await runVisionReply(context.apiMessages, controller.signal)
+        : await runTextAgent(context.apiMessages, controller.signal);
       const spoken = stripDrawMarkers(reply);
       const drawPrompt = settings.autoDrawEnabled ? extractDrawPrompts(reply)[0] : undefined;
       chat.updateConversation(conversationId, (c) => ({

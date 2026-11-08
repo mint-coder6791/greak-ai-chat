@@ -31,7 +31,7 @@ export function PersonaMemorySection({ settings, chat, onChange, onImportBackup 
 
   return (
     <Section
-      index={3}
+      index={4}
       icon={Brain}
       title="人设与记忆"
       description="上下文窗口、历史摘要与备份"

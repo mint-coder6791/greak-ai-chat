@@ -38,13 +38,6 @@ function renderContent(text: string, isUser: boolean, stickers: StickerLibrary) 
   if (isUser) return text;
   return parseReplySegments(text).map((segment, index) => {
     if (segment.type === 'text') return <span key={index}>{segment.text}</span>;
-    if (segment.type === 'action') {
-      return (
-        <span key={index} className="my-1 block text-[13px] italic text-slate-500">
-          （{segment.text}）
-        </span>
-      );
-    }
     return (
       <span key={index} className="my-2 block">
         <StickerImage tag={segment.tag} src={stickers[segment.tag]} />

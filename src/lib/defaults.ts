@@ -30,4 +30,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   imageApiUrl: '',
   imageApiKey: '',
   imageModel: '',
+  visionApiUrl: DEFAULT_API_BASE_URL,
+  visionApiKey: '',
+  visionModel: 'qwen-vl-max',
 };

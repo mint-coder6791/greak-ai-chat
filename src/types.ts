@@ -89,4 +89,7 @@ export interface AppSettings {
   imageApiUrl: string;
   imageApiKey: string;
   imageModel: string;
+  visionApiUrl: string;
+  visionApiKey: string;
+  visionModel: string;
 }

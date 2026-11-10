@@ -90,6 +90,7 @@ export default function App() {
           chatError={error}
           speech={speech}
           stickers={stickers.library}
+          onCollectSticker={stickers.addSticker}
           onSend={send}
           onStop={stop}
           onOpenSettings={() => setDrawerOpen(true)}

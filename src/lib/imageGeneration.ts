@@ -1,5 +1,7 @@
 import { assertOk } from '@/lib/openai';
 
+export const REFERENCE_IMAGE_MODEL = 'wan2.6-image';
+
 export interface ImageConfig {
   baseUrl: string;
   apiKey: string;
@@ -13,12 +15,17 @@ interface MultimodalImageResponse {
 export async function generateImage({
   config,
   prompt,
+  referenceImage,
   signal,
 }: {
   config: ImageConfig;
   prompt: string;
+  referenceImage?: string;
   signal: AbortSignal;
 }): Promise<string> {
+  const content = referenceImage ? [{ image: referenceImage }, { text: prompt }] : [{ text: prompt }];
+  const model = referenceImage ? REFERENCE_IMAGE_MODEL : config.model.trim();
+
   let res: Response;
   try {
     res = await fetch(config.baseUrl.trim(), {
@@ -26,8 +33,8 @@ export async function generateImage({
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey.trim()}` },
       signal,
       body: JSON.stringify({
-        model: config.model.trim(),
-        input: { messages: [{ role: 'user', content: [{ text: prompt }] }] },
+        model,
+        input: { messages: [{ role: 'user', content }] },
         parameters: { size: '1024*1024', n: 1, watermark: false },
       }),
     });

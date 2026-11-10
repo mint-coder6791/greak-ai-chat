@@ -2,6 +2,7 @@ import { Palette } from 'lucide-react';
 import type { AppSettings } from '@/types';
 import { Section, Toggle } from '@/components/control/ui';
 import { ApiEndpointFields } from '@/components/control/ApiEndpointFields';
+import { ReferenceImageField } from '@/components/control/ReferenceImageField';
 
 interface ImageSectionProps {
   settings: AppSettings;
@@ -28,6 +29,7 @@ export function ImageSection({ settings, onChange }: ImageSectionProps) {
         modelPlaceholder="wan2.6-t2i"
         modelHint="填写服务商提供的生图模型名称"
       />
+      <ReferenceImageField />
       <p className="text-[11px] leading-relaxed text-slate-500">
         生图请求由浏览器直接发出，部分服务商会因跨域限制无法访问，此时需要换用允许浏览器访问的接口地址。
       </p>

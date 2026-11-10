@@ -10,8 +10,10 @@ import { requestCompletion, streamChatCompletion, type ApiConfig, type StreamRes
 import { estimateTokens, withKeyFailover } from '@/lib/keyPool';
 import { AGENT_TOOLS, executeTool } from '@/lib/tools';
 import { errorMessage } from '@/lib/errors';
-import { extractDrawPrompts, stripDrawMarkers } from '@/lib/drawMarker';
+import { parseDrawRequests, stripDrawMarkers, type DrawRequest } from '@/lib/drawMarker';
+import { listStickers } from '@/lib/stickerStore';
 import { generateImage } from '@/lib/imageGeneration';
+import { loadReferenceImage } from '@/lib/storage';
 
 export interface StreamingState {
   conversationId: string;
@@ -20,6 +22,7 @@ export interface StreamingState {
 }
 
 const MAX_TOOL_STEPS = 4;
+const MAX_DRAWS_PER_REPLY = 2;
 const NOTICE_DURATION_MS = 6000;
 
 interface UseChatOptions {
@@ -136,7 +139,7 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
       return result.content;
     };
 
-    const draw = async (drawConversationId: string, prompt: string, signal: AbortSignal) => {
+    const draw = async (drawConversationId: string, request: DrawRequest, signal: AbortSignal) => {
       const { imageApiUrl, imageApiKey, imageModel } = settings;
       if (!imageApiUrl.trim() || !imageApiKey.trim() || !imageModel.trim()) {
         throw new Error('自主生图已开启，但图像生成模型的 URL、Key 或模型名称还没填写完整');
@@ -144,19 +147,22 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
       setStreaming({ conversationId: drawConversationId, messageId: null, drawing: true });
       const src = await generateImage({
         config: { baseUrl: imageApiUrl, apiKey: imageApiKey, model: imageModel },
-        prompt,
+        prompt: request.prompt,
+        referenceImage: loadReferenceImage() ?? undefined,
         signal,
       });
+      const stickerLabel = request.kind === 'sticker' ? request.label : undefined;
       chat.updateConversation(drawConversationId, (c) => ({
         ...c,
-        messages: [...c.messages, { ...createMessage('assistant', ''), image: src }],
+        messages: [...c.messages, { ...createMessage('assistant', ''), image: src, stickerLabel }],
         updatedAt: Date.now(),
       }));
     };
 
     try {
       const withUser = { ...conversation, messages: [...conversation.messages, userMessage] };
-      const context = await buildChatContext(withUser, settings, controller.signal, complete, hasImage);
+      const stickerLabels = (await listStickers()).map((item) => item.label);
+      const context = await buildChatContext(withUser, settings, controller.signal, complete, hasImage, stickerLabels);
 
       chat.updateConversation(conversationId, (c) => ({
         ...c,
@@ -172,7 +178,7 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
         ? await runVisionReply(context.apiMessages, controller.signal)
         : await runTextAgent(context.apiMessages, controller.signal);
       const spoken = stripDrawMarkers(reply);
-      const drawPrompt = settings.autoDrawEnabled ? extractDrawPrompts(reply)[0] : undefined;
+      const drawRequests = settings.autoDrawEnabled ? parseDrawRequests(reply).slice(0, MAX_DRAWS_PER_REPLY) : [];
       chat.updateConversation(conversationId, (c) => ({
         ...c,
         messages: c.messages.map((m) => (m.id === assistantMessage.id ? { ...m, content: spoken } : m)),
@@ -180,7 +186,7 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
       const voiceText = extractVoiceText(spoken);
       if (voiceText) speech.speak(voiceText, assistantMessage.id);
       else if (settings.autoRead && spoken.trim()) speech.speak(spoken, assistantMessage.id);
-      if (drawPrompt) await draw(conversationId, drawPrompt, controller.signal);
+      for (const request of drawRequests) await draw(conversationId, request, controller.signal);
     } catch (err) {
       if (!controller.signal.aborted) setError(errorMessage(err));
     } finally {

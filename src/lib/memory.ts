@@ -1,6 +1,5 @@
 import type { ApiContentPart, ApiMessage, ChatMessage, Conversation, ModelCall, AppSettings } from '@/types';
-import { STICKER_TAGS } from '@/lib/stickers';
-import { GREAK_PERSONA, REPLY_FORMAT_RULES, DRAW_RULES } from '@/lib/persona';
+import { GREAK_PERSONA, REPLY_FORMAT_RULES, STICKER_RULES, DRAW_RULES } from '@/lib/persona';
 
 const SUMMARY_PROMPT =
   '你是对话摘要助手。请把用户提供的已有摘要与新增对话融合为一段不超过300字的中文摘要，保留关键事实、用户偏好、人物信息和未完成的事项。只输出摘要本身。';
@@ -10,18 +9,21 @@ const CAPABILITY_GUIDE =
 
 const IMAGE_PLACEHOLDER = '（用户发送了一张图片）';
 
-const TAG_GUIDE = `表情标签只能从 ${STICKER_TAGS.join('、')} 中选择。`;
-
 export interface ChatContext {
   apiMessages: ApiMessage[];
   summary: string;
   summarizedCount: number;
 }
 
-export function buildSystemPrompt(summary: string, autoDraw: boolean): string {
-  const parts = [GREAK_PERSONA, REPLY_FORMAT_RULES, TAG_GUIDE, CAPABILITY_GUIDE];
+export function buildSystemPrompt(summary: string, autoDraw: boolean, stickerLabels: string[]): string {
+  const parts = [GREAK_PERSONA, REPLY_FORMAT_RULES, STICKER_RULES, CAPABILITY_GUIDE];
   if (autoDraw) parts.push(DRAW_RULES);
   if (summary) parts.push(`【历史摘要】以下是更早对话的摘要，请据此保持记忆连贯：\n${summary}`);
+  parts.push(
+    stickerLabels.length > 0
+      ? `当前本地可调用的表情包标签有：[${stickerLabels.join(', ')}]`
+      : '当前本地暂无可调用的表情包标签。',
+  );
   return parts.join('\n');
 }
 
@@ -57,6 +59,7 @@ export async function buildChatContext(
   signal: AbortSignal,
   complete: ModelCall,
   vision: boolean,
+  stickerLabels: string[],
 ): Promise<ChatContext> {
   const windowStart = Math.max(0, conversation.messages.length - settings.maxContextRounds * 2);
   let summary = conversation.summary;
@@ -68,7 +71,7 @@ export async function buildChatContext(
     summarizedCount = windowStart;
   }
 
-  const system = buildSystemPrompt(settings.summaryEnabled ? summary : '', settings.autoDrawEnabled);
+  const system = buildSystemPrompt(settings.summaryEnabled ? summary : '', settings.autoDrawEnabled, stickerLabels);
   const windowed: ApiMessage[] = conversation.messages
     .slice(windowStart)
     .filter((m) => m.role === 'user' || m.content !== '')

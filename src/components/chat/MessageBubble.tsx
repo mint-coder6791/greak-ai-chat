@@ -6,6 +6,7 @@ import { type StickerLibrary } from '@/lib/stickers';
 import { parseReplySegments, stripVoiceMarker } from '@/lib/replyParser';
 import { stripDrawMarkers } from '@/lib/drawMarker';
 import { StickerImage } from '@/components/chat/StickerImage';
+import { StickerCollectButton } from '@/components/chat/StickerCollectButton';
 import { AvatarSlot } from '@/components/layout/AvatarSlot';
 
 export type MessageSpeechState = SpeechStatus | 'idle';
@@ -18,6 +19,7 @@ interface MessageBubbleProps {
   stickers: StickerLibrary;
   onToggleSpeech: () => void;
   onStopSpeech: () => void;
+  onCollectSticker: (label: string, source: string) => Promise<void>;
 }
 
 function ThinkingDots() {
@@ -38,9 +40,11 @@ function renderContent(text: string, isUser: boolean, stickers: StickerLibrary) 
   if (isUser) return text;
   return parseReplySegments(text).map((segment, index) => {
     if (segment.type === 'text') return <span key={index}>{segment.text}</span>;
+    const src = stickers[segment.label];
+    if (!src) return null;
     return (
       <span key={index} className="my-2 block">
-        <StickerImage tag={segment.tag} src={stickers[segment.tag]} />
+        <StickerImage label={segment.label} src={src} />
       </span>
     );
   });
@@ -54,6 +58,7 @@ export function MessageBubble({
   stickers,
   onToggleSpeech,
   onStopSpeech,
+  onCollectSticker,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const displayContent = isUser ? message.content : stripDrawMarkers(stripVoiceMarker(message.content));
@@ -65,6 +70,7 @@ export function MessageBubble({
   ) : null;
   const showSpeechControls = !isUser && !isStreaming && message.content.trim() !== '';
   const speechActive = speechState !== 'idle';
+  const collectable = !isUser && message.stickerLabel && message.image ? { label: message.stickerLabel, src: message.image } : null;
 
   const speakLabel =
     speechState === 'speaking' ? '暂停朗读' : speechState === 'paused' ? '继续朗读' : '朗读这条消息';
@@ -88,6 +94,13 @@ export function MessageBubble({
             <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 bg-emerald-400 animate-pulse" />
           )}
         </div>
+        )}
+        {collectable && !isStreaming && (
+          <StickerCollectButton
+            label={collectable.label}
+            collected={Boolean(stickers[collectable.label])}
+            onCollect={() => onCollectSticker(collectable.label, collectable.src)}
+          />
         )}
         {showSpeechControls && (
           <div

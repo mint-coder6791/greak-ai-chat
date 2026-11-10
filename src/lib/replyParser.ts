@@ -1,9 +1,7 @@
-import { isStickerTag, type StickerTag } from '@/lib/stickers';
-
 const VOICE_MARKER = '[VOICE]';
-const STICKER_PATTERN = /\[STICKER:([^\]]+)\]/g;
+const STICKER_PATTERN = /\[STICKER:\s*([^\]]+?)\s*\]/g;
 
-export type ReplySegment = { type: 'text'; text: string } | { type: 'sticker'; tag: StickerTag };
+export type ReplySegment = { type: 'text'; text: string } | { type: 'sticker'; label: string };
 
 export function parseReplySegments(text: string): ReplySegment[] {
   const segments: ReplySegment[] = [];
@@ -12,8 +10,7 @@ export function parseReplySegments(text: string): ReplySegment[] {
     const index = match.index ?? 0;
     if (index > last) segments.push({ type: 'text', text: text.slice(last, index) });
     last = index + match[0].length;
-    const value = match[1].trim();
-    if (isStickerTag(value)) segments.push({ type: 'sticker', tag: value });
+    if (match[1]) segments.push({ type: 'sticker', label: match[1] });
   }
   if (last < text.length) segments.push({ type: 'text', text: text.slice(last) });
   return segments;

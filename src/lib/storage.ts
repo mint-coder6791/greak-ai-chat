@@ -1,12 +1,12 @@
 import type { AppSettings, ChatStore, KeyPoolState } from '@/types';
 import { DEFAULT_SETTINGS } from '@/lib/defaults';
 import { limitMessages } from '@/lib/conversations';
-import { STICKER_TAGS, type StickerLibrary } from '@/lib/stickers';
 
 const SETTINGS_KEY = 'private-agent:settings';
 const CHAT_KEY = 'private-agent:chat';
 const KEY_POOL_KEY = 'private-agent:key-pool';
 const STICKER_KEY = 'private-agent:stickers';
+const REFERENCE_IMAGE_KEY = 'greak_reference_image';
 const MIN_STORED_MESSAGES = 10;
 
 const EMPTY_CHAT: ChatStore = { conversations: [], activeId: null };
@@ -55,24 +55,39 @@ export function saveKeyPool(state: KeyPoolState): void {
   }
 }
 
-export function loadStickers(): StickerLibrary {
+export function readLegacyStickers(): Record<string, string> {
   const stored = readJson<Record<string, unknown>>(STICKER_KEY, {});
-  const library: StickerLibrary = {};
-  for (const tag of STICKER_TAGS) {
-    const value = stored[tag];
-    if (typeof value === 'string') library[tag] = value;
+  const legacy: Record<string, string> = {};
+  for (const [tag, value] of Object.entries(stored)) {
+    if (typeof value === 'string') legacy[tag] = value;
   }
-  return library;
+  return legacy;
 }
 
-export function saveStickers(library: StickerLibrary): boolean {
+export function clearLegacyStickers(): void {
+  localStorage.removeItem(STICKER_KEY);
+}
+
+export function loadReferenceImage(): string | null {
   try {
-    localStorage.setItem(STICKER_KEY, JSON.stringify(library));
+    return localStorage.getItem(REFERENCE_IMAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveReferenceImage(dataUrl: string): boolean {
+  try {
+    localStorage.setItem(REFERENCE_IMAGE_KEY, dataUrl);
     return true;
   } catch (err) {
-    console.error('表情包保存失败', err);
+    console.error('参考图保存失败', err);
     return false;
   }
+}
+
+export function clearReferenceImage(): void {
+  localStorage.removeItem(REFERENCE_IMAGE_KEY);
 }
 
 export function loadChat(): ChatStore {

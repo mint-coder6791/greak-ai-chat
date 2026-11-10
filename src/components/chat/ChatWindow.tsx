@@ -20,6 +20,7 @@ interface ChatWindowProps {
   chatError: string | null;
   speech: SpeechControls;
   stickers: StickerLibrary;
+  onCollectSticker: (label: string, source: string) => Promise<void>;
   onSend: (text: string, image?: string) => void;
   onStop: () => void;
   onOpenSettings: () => void;
@@ -34,6 +35,7 @@ export function ChatWindow({
   chatError,
   speech,
   stickers,
+  onCollectSticker,
   onSend,
   onStop,
   onOpenSettings,
@@ -110,6 +112,7 @@ export function ChatWindow({
                 isStreaming={activeStreaming?.messageId === message.id}
                 speechState={message.role === 'assistant' ? getSpeechState(message.id) : 'idle'}
                 stickers={stickers}
+                onCollectSticker={onCollectSticker}
                 onToggleSpeech={() => handleToggleSpeech(message.id, message.content)}
                 onStopSpeech={speech.stop}
               />

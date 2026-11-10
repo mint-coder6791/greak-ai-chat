@@ -5,6 +5,7 @@ export interface ChatMessage {
   role: MessageRole;
   content: string;
   image?: string;
+  stickerLabel?: string;
   createdAt: number;
 }
 

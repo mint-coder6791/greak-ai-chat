@@ -8,7 +8,7 @@ import { buildChatContext } from '@/lib/memory';
 import { extractVoiceText } from '@/lib/replyParser';
 import { requestCompletion, streamChatCompletion, type ApiConfig, type StreamResult } from '@/lib/openai';
 import { estimateTokens, withKeyFailover } from '@/lib/keyPool';
-import { AGENT_TOOLS, executeTool } from '@/lib/tools';
+import { buildAgentTools, executeTool } from '@/lib/tools';
 import { errorMessage } from '@/lib/errors';
 import { parseDrawRequests, stripDrawMarkers, type DrawRequest } from '@/lib/drawMarker';
 import { listStickers } from '@/lib/stickerStore';
@@ -30,9 +30,11 @@ interface UseChatOptions {
   chat: ChatApi;
   speech: Pick<SpeechControls, 'speak' | 'stop'>;
   keyPool: Pick<KeyPoolControls, 'activeSlot' | 'setActiveSlot' | 'recordUsage'>;
+  ttsEnabled: boolean;
+  refreshStickers: () => void;
 }
 
-export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
+export function useChat({ settings, chat, speech, keyPool, ttsEnabled, refreshStickers }: UseChatOptions) {
   const [streaming, setStreaming] = useState<StreamingState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -59,6 +61,7 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
     const userMessage: ChatMessage = { ...createMessage('user', text), ...(image ? { image } : {}) };
     const assistantMessage: ChatMessage = createMessage('assistant', '');
     const hasImage = Boolean(image);
+    const tools = buildAgentTools(Boolean(settings.giphyApiKey.trim()));
     const controller = new AbortController();
     abortRef.current = controller;
     setStreaming({ conversationId, messageId: null });
@@ -113,7 +116,7 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
             streamChatCompletion({
               config: { baseUrl: settings.apiBaseUrl, apiKey, model: settings.model },
               messages: transcript,
-              tools: allowTools ? AGENT_TOOLS : undefined,
+              tools: allowTools ? tools : undefined,
               signal,
               onDelta: appendDelta,
             }),
@@ -123,7 +126,12 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
 
         transcript.push({ role: 'assistant', content: result.content || null, tool_calls: result.toolCalls });
         for (const call of result.toolCalls) {
-          const output = await executeTool(call, { callModel: complete, signal });
+          const output = await executeTool(call, {
+            callModel: complete,
+            signal,
+            giphyApiKey: settings.giphyApiKey,
+            onStickersChanged: refreshStickers,
+          });
           transcript.push({ role: 'tool', tool_call_id: call.id, content: output });
         }
       }
@@ -183,9 +191,11 @@ export function useChat({ settings, chat, speech, keyPool }: UseChatOptions) {
         ...c,
         messages: c.messages.map((m) => (m.id === assistantMessage.id ? { ...m, content: spoken } : m)),
       }));
-      const voiceText = extractVoiceText(spoken);
-      if (voiceText) speech.speak(voiceText, assistantMessage.id);
-      else if (settings.autoRead && spoken.trim()) speech.speak(spoken, assistantMessage.id);
+      if (ttsEnabled) {
+        const voiceText = extractVoiceText(spoken);
+        if (voiceText) speech.speak(voiceText, assistantMessage.id);
+        else if (settings.autoRead && spoken.trim()) speech.speak(spoken, assistantMessage.id);
+      }
       for (const request of drawRequests) await draw(conversationId, request, controller.signal);
     } catch (err) {
       if (!controller.signal.aborted) setError(errorMessage(err));

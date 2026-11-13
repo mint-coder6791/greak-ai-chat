@@ -1,7 +1,8 @@
 import type { ModelCall, ToolCall, ToolDefinition } from '@/types';
 import { errorMessage } from '@/lib/errors';
+import { importGiphyStickers, MAX_GIPHY_IMPORT } from '@/lib/giphy';
 
-export const AGENT_TOOLS: ToolDefinition[] = [
+const BASE_TOOLS: ToolDefinition[] = [
   {
     type: 'function',
     function: {
@@ -27,6 +28,33 @@ export const AGENT_TOOLS: ToolDefinition[] = [
     },
   },
 ];
+
+const SEARCH_STICKERS_TOOL: ToolDefinition = {
+  type: 'function',
+  function: {
+    name: 'search_stickers',
+    description: `从 GIPHY 搜索表情包并自动收藏到你的表情包库，最多 ${MAX_GIPHY_IMPORT} 张。想收集某种情绪或梗的表情包时调用，收藏后可用 [STICKER: 标签名] 发送。`,
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: '英文搜索关键词，例如 angry cat' },
+        limit: { type: 'integer', description: `收藏数量，1 到 ${MAX_GIPHY_IMPORT}`, minimum: 1, maximum: MAX_GIPHY_IMPORT },
+      },
+      required: ['query'],
+    },
+  },
+};
+
+export function buildAgentTools(giphyEnabled: boolean): ToolDefinition[] {
+  return giphyEnabled ? [...BASE_TOOLS, SEARCH_STICKERS_TOOL] : BASE_TOOLS;
+}
+
+export interface ToolContext {
+  callModel: ModelCall;
+  signal: AbortSignal;
+  giphyApiKey: string;
+  onStickersChanged: () => void;
+}
 
 const WEATHER_CODES: Record<number, string> = {
   0: '晴',
@@ -138,10 +166,21 @@ async function searchWeb(query: string, callModel: ModelCall, signal: AbortSigna
   });
 }
 
-export async function executeTool(
-  call: ToolCall,
-  { callModel, signal }: { callModel: ModelCall; signal: AbortSignal },
-): Promise<string> {
+async function searchStickers(args: Record<string, unknown>, ctx: ToolContext): Promise<string> {
+  const query = String(args.query ?? '').trim();
+  if (!query) return '缺少搜索关键词';
+  const labels = await importGiphyStickers({
+    apiKey: ctx.giphyApiKey,
+    query,
+    limit: Number(args.limit ?? MAX_GIPHY_IMPORT),
+    signal: ctx.signal,
+  });
+  ctx.onStickersChanged();
+  return `已收藏 ${labels.length} 张表情包，可用标签：${labels.join('、')}`;
+}
+
+export async function executeTool(call: ToolCall, ctx: ToolContext): Promise<string> {
+  const { callModel, signal } = ctx;
   let args: Record<string, unknown>;
   try {
     args = JSON.parse(call.function.arguments || '{}') as Record<string, unknown>;
@@ -154,6 +193,8 @@ export async function executeTool(
         return await getWeather(String(args.city ?? ''), signal);
       case 'web_search':
         return await searchWeb(String(args.query ?? ''), callModel, signal);
+      case 'search_stickers':
+        return await searchStickers(args, ctx);
       default:
         return `未知工具：${call.function.name}`;
     }

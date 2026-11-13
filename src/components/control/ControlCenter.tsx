@@ -115,7 +115,11 @@ export function ControlCenter({
           />
           <SpeechSection settings={settings} speech={speech} onChange={updateSettings} />
           <BgmSection settings={settings} bgm={bgm} onChange={updateSettings} />
-          <StickerSection stickers={stickers} />
+          <StickerSection
+            stickers={stickers}
+            giphyApiKey={settings.giphyApiKey}
+            onGiphyApiKeyChange={(giphyApiKey) => updateSettings({ giphyApiKey })}
+          />
           <AppearanceSection portrait={portrait} />
           <DebugSection settings={settings} onChange={updateSettings} />
         </div>

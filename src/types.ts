@@ -93,4 +93,5 @@ export interface AppSettings {
   visionApiUrl: string;
   visionApiKey: string;
   visionModel: string;
+  giphyApiKey: string;
 }

@@ -57,7 +57,7 @@ export function useStickerLibrary() {
     await refresh();
   };
 
-  return { items, library, error, addSticker, removeSticker };
+  return { items, library, error, refresh, addSticker, removeSticker };
 }
 
 export type StickerControls = ReturnType<typeof useStickerLibrary>;

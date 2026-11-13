@@ -15,6 +15,7 @@ import { useKeyPool } from '@/hooks/useKeyPool';
 import { useStickerLibrary } from '@/hooks/useStickerLibrary';
 import { usePortrait } from '@/hooks/usePortrait';
 import { isConfigured } from '@/lib/keyPool';
+import { loadTtsEnabled, saveTtsEnabled } from '@/lib/storage';
 import { DEFAULT_PORTRAIT_SRC } from '@/lib/persona';
 import type { ImportedBackup } from '@/lib/backup';
 
@@ -25,6 +26,7 @@ export default function App() {
   const keyPool = useKeyPool();
   const stickers = useStickerLibrary();
   const portrait = usePortrait();
+  const [ttsEnabled, setTtsEnabled] = useState(loadTtsEnabled);
   const avatarSrc = portrait.portraitUrl ?? DEFAULT_PORTRAIT_SRC;
   const bgm = useBgm({
     url: settings.bgmUrl,
@@ -33,7 +35,7 @@ export default function App() {
     duck: settings.smartDucking,
     isSpeaking: speech.status === 'speaking',
   });
-  const { send, stop, streaming, error, notice } = useChat({ settings, chat, speech, keyPool });
+  const { send, stop, streaming, error, notice } = useChat({ settings, chat, speech, keyPool, ttsEnabled, refreshStickers: stickers.refresh });
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -43,6 +45,13 @@ export default function App() {
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
   const handleBooted = useCallback(() => setBooted(true), []);
+
+  const handleToggleTts = () => {
+    const next = !ttsEnabled;
+    if (!next) speech.stop();
+    setTtsEnabled(next);
+    saveTtsEnabled(next);
+  };
 
   const handleNew = () => {
     if (!chat.activeConversation || chat.activeConversation.messages.length > 0) chat.createNew();
@@ -91,6 +100,8 @@ export default function App() {
           speech={speech}
           stickers={stickers.library}
           onCollectSticker={stickers.addSticker}
+          ttsEnabled={ttsEnabled}
+          onToggleTts={handleToggleTts}
           onSend={send}
           onStop={stop}
           onOpenSettings={() => setDrawerOpen(true)}

@@ -7,6 +7,7 @@ const CHAT_KEY = 'private-agent:chat';
 const KEY_POOL_KEY = 'private-agent:key-pool';
 const STICKER_KEY = 'private-agent:stickers';
 const REFERENCE_IMAGE_KEY = 'greak_reference_image';
+const TTS_ENABLED_KEY = 'isTTSEnabled';
 const MIN_STORED_MESSAGES = 10;
 
 const EMPTY_CHAT: ChatStore = { conversations: [], activeId: null };
@@ -88,6 +89,22 @@ export function saveReferenceImage(dataUrl: string): boolean {
 
 export function clearReferenceImage(): void {
   localStorage.removeItem(REFERENCE_IMAGE_KEY);
+}
+
+export function loadTtsEnabled(): boolean {
+  try {
+    return localStorage.getItem(TTS_ENABLED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function saveTtsEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(TTS_ENABLED_KEY, String(enabled));
+  } catch (err) {
+    console.error('语音开关保存失败', err);
+  }
 }
 
 export function loadChat(): ChatStore {

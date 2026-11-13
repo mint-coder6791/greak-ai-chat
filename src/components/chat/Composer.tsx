@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, KeyboardEvent } from 'react';
-import { ImagePlus, Send, Square, X } from 'lucide-react';
+import { ImagePlus, Send, Square, Volume2, X } from 'lucide-react';
 import { errorMessage } from '@/lib/errors';
 import { compressImageToDataUrl } from '@/lib/imageFile';
 
@@ -10,11 +10,13 @@ interface ComposerProps {
   onSend: (text: string, image?: string) => void;
   onStop: () => void;
   onOpenSettings: () => void;
+  ttsEnabled: boolean;
+  onToggleTts: () => void;
 }
 
 const MAX_HEIGHT_PX = 200;
 
-export function Composer({ busy, configured, onSend, onStop, onOpenSettings }: ComposerProps) {
+export function Composer({ busy, configured, onSend, onStop, onOpenSettings, ttsEnabled, onToggleTts }: ComposerProps) {
   const [draft, setDraft] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -103,6 +105,19 @@ export function Composer({ busy, configured, onSend, onStop, onOpenSettings }: C
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-3xl text-slate-500 transition hover:bg-emerald-50 hover:text-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:text-slate-300"
         >
           <ImagePlus className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={onToggleTts}
+          aria-pressed={ttsEnabled}
+          aria-label="语音播报"
+          title={ttsEnabled ? '语音播报已开启' : '语音播报已关闭'}
+          className={`flex h-10 shrink-0 items-center gap-1.5 rounded-3xl px-3 text-xs font-medium transition active:scale-95 ${
+            ttsEnabled ? 'bg-emerald-100 text-emerald-800' : 'text-slate-500 hover:bg-emerald-50 hover:text-emerald-700'
+          }`}
+        >
+          <Volume2 className="h-4 w-4" />
+          语音
         </button>
         <textarea
           ref={textareaRef}

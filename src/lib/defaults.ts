@@ -35,4 +35,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   visionApiUrl: DEFAULT_API_BASE_URL,
   visionApiKey: '',
   visionModel: 'qwen-vl-max',
+  giphyApiKey: '',
 };

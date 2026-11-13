@@ -11,6 +11,14 @@ const ttsProxy = {
   },
 };
 
+const giphyProxy = {
+  '/api/giphy': {
+    target: 'https://api.giphy.com/v1/gifs',
+    changeOrigin: true,
+    rewrite: (path: string) => path.replace(/^\/api\/giphy/, ''),
+  },
+};
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -22,9 +30,9 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   server: {
-    proxy: ttsProxy,
+    proxy: { ...ttsProxy, ...giphyProxy },
   },
   preview: {
-    proxy: ttsProxy,
+    proxy: { ...ttsProxy, ...giphyProxy },
   },
 });

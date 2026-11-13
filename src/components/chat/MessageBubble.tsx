@@ -20,6 +20,7 @@ interface MessageBubbleProps {
   onToggleSpeech: () => void;
   onStopSpeech: () => void;
   onCollectSticker: (label: string, source: string) => Promise<void>;
+  ttsEnabled: boolean;
 }
 
 function ThinkingDots() {
@@ -59,6 +60,7 @@ export function MessageBubble({
   onToggleSpeech,
   onStopSpeech,
   onCollectSticker,
+  ttsEnabled,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const displayContent = isUser ? message.content : stripDrawMarkers(stripVoiceMarker(message.content));
@@ -68,7 +70,7 @@ export function MessageBubble({
   const imageEl = message.image ? (
     <img src={message.image} alt={isUser ? '已发送的图片' : 'GREAK 画的图'} className="max-h-72 w-auto max-w-full rounded-2xl object-cover" />
   ) : null;
-  const showSpeechControls = !isUser && !isStreaming && message.content.trim() !== '';
+  const showSpeechControls = ttsEnabled && !isUser && !isStreaming && message.content.trim() !== '';
   const speechActive = speechState !== 'idle';
   const collectable = !isUser && message.stickerLabel && message.image ? { label: message.stickerLabel, src: message.image } : null;
 

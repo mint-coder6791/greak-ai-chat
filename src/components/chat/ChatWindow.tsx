@@ -25,6 +25,8 @@ interface ChatWindowProps {
   onStop: () => void;
   onOpenSettings: () => void;
   onToggleSidebar: () => void;
+  ttsEnabled: boolean;
+  onToggleTts: () => void;
 }
 
 export function ChatWindow({
@@ -40,6 +42,8 @@ export function ChatWindow({
   onStop,
   onOpenSettings,
   onToggleSidebar,
+  ttsEnabled,
+  onToggleTts,
 }: ChatWindowProps) {
   const { scrollRef, contentRef, scrollToBottom, handleScroll } = useAutoScroll();
   const messages = conversation?.messages ?? [];
@@ -113,6 +117,7 @@ export function ChatWindow({
                 speechState={message.role === 'assistant' ? getSpeechState(message.id) : 'idle'}
                 stickers={stickers}
                 onCollectSticker={onCollectSticker}
+                ttsEnabled={ttsEnabled}
                 onToggleSpeech={() => handleToggleSpeech(message.id, message.content)}
                 onStopSpeech={speech.stop}
               />
@@ -135,6 +140,8 @@ export function ChatWindow({
             onSend={onSend}
             onStop={onStop}
             onOpenSettings={onOpenSettings}
+            ttsEnabled={ttsEnabled}
+            onToggleTts={onToggleTts}
           />
         </div>
       </div>

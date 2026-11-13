@@ -4,15 +4,18 @@ import { MAX_STICKER_LABEL_LENGTH, MAX_STICKER_UPLOAD_BYTES } from '@/lib/sticke
 import { readImageAsDataUrl } from '@/lib/imageFile';
 import { errorMessage } from '@/lib/errors';
 import type { StickerControls } from '@/hooks/useStickerLibrary';
-import { Section, buttonClass, inputClass } from '@/components/control/ui';
+import { Field, Section, buttonClass, inputClass } from '@/components/control/ui';
+import { GiphyImportPanel } from '@/components/control/GiphyImportPanel';
 
 type StickerNotice = { tone: 'ok' | 'error'; text: string } | null;
 
 interface StickerSectionProps {
   stickers: StickerControls;
+  giphyApiKey: string;
+  onGiphyApiKeyChange: (value: string) => void;
 }
 
-export function StickerSection({ stickers }: StickerSectionProps) {
+export function StickerSection({ stickers, giphyApiKey, onGiphyApiKeyChange }: StickerSectionProps) {
   const [name, setName] = useState('');
   const [notice, setNotice] = useState<StickerNotice>(null);
   const trimmedName = name.trim();
@@ -59,6 +62,17 @@ export function StickerSection({ stickers }: StickerSectionProps) {
       title="表情包库"
       description="收藏和上传的表情都保存在这里，AI 可以用 [STICKER: 名称] 直接调用"
     >
+      <Field label="GIPHY API Key" hint="用于 AI 与你自己从 GIPHY 搜索表情包，请填写在 GIPHY 开发者后台申请的 Key">
+        <input
+          type="password"
+          className={inputClass}
+          value={giphyApiKey}
+          onChange={(e) => onGiphyApiKeyChange(e.target.value)}
+          spellCheck={false}
+          autoComplete="off"
+        />
+      </Field>
+      <GiphyImportPanel apiKey={giphyApiKey} onImported={stickers.refresh} />
       <div className="space-y-2 rounded-3xl border border-emerald-100 bg-emerald-50/40 p-3">
         <input
           className={inputClass}
